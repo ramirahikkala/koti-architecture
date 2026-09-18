@@ -18,17 +18,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+
+      - run: npm ci
 
       - name: Build interactive app (served from /app/)
-        run: npx likec4@latest build --base /koti-architecture/app/ --output dist/app
+        run: npx likec4 build --base /koti-architecture/app/ --output dist/app
 
       - name: Install Playwright browser (for PNG export)
+        # No version pin here on purpose: npx resolves the locally installed
+        # `playwright`, which npm ci pinned to exactly the version likec4
+        # depends on internally. Using `playwright@latest` here would risk
+        # downloading a different Chromium revision than the one likec4's
+        # bundled Playwright expects, which fails fast with "Executable
+        # doesn't exist".
         run: npx playwright install --with-deps chromium
 
       - name: Export Level 1 diagram as PNG (light + dark)
         run: |
-          npx likec4@latest export png --filter index --flat --theme light -o /tmp/ctx-light
-          npx likec4@latest export png --filter index --flat --theme dark -o /tmp/ctx-dark
+          npx likec4 export png --filter index --flat --theme light -o /tmp/ctx-light
+          npx likec4 export png --filter index --flat --theme dark -o /tmp/ctx-dark
           mkdir -p dist/assets
           cp "$(find /tmp/ctx-light -name '*.png' | head -1)" dist/assets/context-light.png
           cp "$(find /tmp/ctx-dark -name '*.png' | head -1)" dist/assets/context-dark.png
