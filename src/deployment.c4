@@ -12,56 +12,36 @@ deployment {
     title 'Koti (kotiverkko)'
     description 'Fyysiset laitteet kotiverkossa'
 
-    gateway = instanceOf kotiDevices.gateway
-    shelly = instanceOf kotiDevices.shelly
-    desk = instanceOf kotiDevices.desk
+    gateway = instanceOf koti.gateway
+    shelly = instanceOf koti.shelly
+    desk = instanceOf koti.desk
   }
 
   server = deploymentNode vm {
     title 'VM (Hetzner)'
     technology 'Docker Compose'
 
-    ha = instanceOf infra.ha
-    mqtt = instanceOf infra.mqtt
-    caddy = instanceOf infra.caddy
+    ha = instanceOf koti.ha
+    mqtt = instanceOf koti.mqtt
     heating = instanceOf koti.heating
-    wilmaPoller = instanceOf kotiWilma.poller
-    wilmaReminder = instanceOf kotiWilma.reminderEngine
-    wilmaDb = instanceOf kotiWilma.db
+    wilmaService = instanceOf koti.wilmaService
   }
 }
 
 views {
 
-  deployment view index {
-    title 'koti — ylätason kuva'
+  deployment view deployment {
+    title 'Level 4 — Deployment (Code-tason sijaan: fyysinen/ajonaikainen sijainti)'
     description '
-      Fyysinen/deploy-taso: koti, VM, ulkoiset palvelut, käyttäjä.
-      Klikkaa Kotia tai VM:ää porautuaksesi tarkemmalle tasolle;
-      yksittäiset palvelut vievät niiden omaan container-näkymään
-      (ks. model.views.c4).
+      Missä kukin container oikeasti pyörii: koti-verkossa vai VM:llä.
+      Code-taso (luokka-/moduulikaavio) jätetty tarkoituksella pois — se
+      vanhenisi heti eikä toisi arvoa tälle projektille.
     '
     include
-      home,
-      home.*,
-      server,
-      server.*,
-      wilma,
-      anthropic,
-      spotHinta,
-      telegram,
-      phone,
-      rami
-  }
-
-  deployment view homeDetail of home {
-    title 'Koti — laitteet'
-    include *
-  }
-
-  deployment view serverDetail of server {
-    title 'VM — palvelut'
-    include *
+      home, home.*,
+      server, server.*,
+      wilma, anthropic, spotHinta, telegram,
+      rami, perhe
   }
 
 }

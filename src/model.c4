@@ -2,71 +2,91 @@ specification {
   element actor
   element system
   element container
+  element component
   element external
 }
 
 model {
-  rami = actor 'Rami' 'Ylläpitää koko settiä'
+  rami = actor 'Rami' 'Ylläpitää ja kehittää koko settiä'
+  perhe = actor 'Perheenjäsen' 'Käyttää Home Assistant -näkymää, vastaanottaa hälytyksiä'
 
   wilma = external 'Wilma' 'Koulun asiointijärjestelmä'
   anthropic = external 'Anthropic Claude API' 'LLM-poiminta'
   spotHinta = external 'Spot-Hinta API' 'Sähkön pörssihinta'
   telegram = external 'Telegram Bot API' 'Suunniteltu ilmoituskanava'
-  phone = external 'Puhelin / push' 'Kanava avoinna'
 
-  koti = system 'koti' 'Headless-palvelut, MQTT substraattina' {
-    heating = container 'koti.heating' 'Hintaohjattu lämmitys' {
-      technology 'Python, paho-mqtt'
-    }
-  }
+  koti = system 'koti' 'Kotiautomaatioalusta' {
 
-  kotiWilma = system 'koti-wilma' 'Wilma-muistutuspalvelu' {
-    poller = container 'Poller + LLM-poiminta' {
-      technology 'Python, wilhelmina, Anthropic SDK'
-    }
-    reminderEngine = container 'Reminder engine' {
-      technology 'Python, APScheduler'
-    }
-    db = container 'SQLite' 'wilma.db'
-  }
+    heating = container 'Lämmityksen ohjain' 'Hintaohjattu kahden tason lämmityksen ohjaus' {
+      technology 'Python'
 
-  kotiDevices = system 'koti-devices' 'ESP32-laiteohjelmistot' {
-    gateway = container 'BLE→MQTT-yhdyskäytävät' {
+      settings = component 'Settings' 'Ympäristöasetukset (.env)'
+      zones = component 'Zones' 'zones.yaml: huoneet, kattila, kynnysarvot'
+      controlCycle = component 'Control cycle' '15 min sykli: hae hinta+lämpötilat, aja strategiat, julkaise'
+      strategies = component 'Strategies' 'onoff/trv-huonekohtainen ohjauslogiikka'
+      publisher = component 'MQTT publisher' 'HA discovery, actuointi, sensorien luku'
+
+      settings -> controlCycle 'konfiguroi'
+      controlCycle -> zones 'lukee'
+      controlCycle -> strategies 'ajaa'
+      controlCycle -> publisher 'julkaisee tulokset, lukee sensorit'
+    }
+
+    wilmaService = container 'Wilma-muistutuspalvelu' 'Poimii deadlinet viesteistä ja kokeista, ajoittaa muistutukset' {
+      technology 'Python'
+
+      wilmaClient = component 'Wilma client' 'Kirjautuminen, roolinvaihto per lapsi'
+      messages = component 'Messages' 'Hakee ja purkaa uudet viestit'
+      exams = component 'Exams' 'Hakee koeaikataulun (spike)'
+      extraction = component 'LLM-poiminta' 'Anthropic-kutsu: tunnistaa deadlinet/päivitykset viesteistä'
+      rules = component 'Reminder rules' 'Deterministinen: milloin muistutukset ajoitetaan'
+      storage = component 'Storage' 'SQLite: nähdyt viestit/kokeet, eventit, muistutukset'
+      reminderEngine = component 'Reminder engine' 'Tarkistaa erääntyneet muistutukset ja laukaisee ne'
+      publisher = component 'MQTT publisher' 'HA event-entiteetit + retained today-topic'
+
+      wilmaClient -> messages
+      wilmaClient -> exams
+      messages -> extraction
+      extraction -> rules
+      exams -> rules
+      rules -> storage
+      reminderEngine -> storage 'lukee erääntyneet'
+      reminderEngine -> publisher 'laukaisee'
+    }
+
+    mqtt = container 'MQTT-broker' 'Julkaisu/tilaus-väylä, koko systeemin substraatti' {
+      technology 'Mosquitto'
+    }
+
+    ha = container 'Home Assistant' 'Kojelauta, historia, automaatiot'
+
+    gateway = container 'BLE→MQTT-yhdyskäytävät' 'Siltaa RuuviTag/Shelly BLU -anturit MQTT:hen' {
       technology 'ESPHome'
     }
-    desk = container 'Desk display' {
+
+    desk = container 'Desk display' 'Näyttää lämpötilat, kattilan tilan, päivän muistutukset' {
       technology 'T-Display-S3'
     }
-    shelly = container 'Shelly-releet/TRV:t' {
+
+    shelly = container 'Shelly-releet/TRV:t' 'Lämmityksen toimilaitteet' {
       technology 'Natiivi MQTT'
     }
   }
 
-  infra = system 'infra' 'Alusta' {
-    mqtt = container 'MQTT-broker' {
-      technology 'Mosquitto'
-    }
-    ha = container 'Home Assistant'
-    caddy = container 'Caddy' 'Reverse proxy / TLS'
-  }
+  perhe -> koti.ha 'katsoo kojelautaa, saa hälytyksiä'
+  perhe -> telegram 'saa hälytyksiä (suunniteltu)'
+  rami -> koti 'ylläpitää'
 
-  wilma -> kotiWilma.poller 'evästesessio, viestit + kokeet'
-  kotiWilma.poller -> anthropic 'poiminta'
-  kotiWilma.poller -> kotiWilma.db
-  kotiWilma.reminderEngine -> kotiWilma.db
-  kotiWilma.reminderEngine -> infra.mqtt 'event-entiteetit + retained today-topic'
+  koti.heating.publisher -> koti.mqtt
+  koti.wilmaService.publisher -> koti.mqtt
+  koti.gateway -> koti.mqtt
+  koti.shelly -> koti.mqtt
+  koti.desk -> koti.mqtt 'lukee retained-topicit suoraan'
+  koti.mqtt -> koti.ha
 
-  spotHinta -> koti.heating
-  koti.heating -> infra.mqtt 'HA discovery + ohjaus'
-  infra.mqtt -> kotiDevices.shelly
-  kotiDevices.gateway -> infra.mqtt
-  kotiDevices.desk -> infra.mqtt 'lukee retained-topicit suoraan'
-  infra.mqtt -> infra.ha
+  koti.ha -> telegram 'automaatio (myöh.)'
 
-  infra.ha -> telegram 'automaatio (myöh.)'
-  infra.ha -> phone 'automaatio (myöh.)'
-  telegram -> phone
-
-  rami -> kotiWilma
-  rami -> koti
+  koti.wilmaService.wilmaClient -> wilma 'evästesessio'
+  koti.wilmaService.extraction -> anthropic
+  koti.heating.controlCycle -> spotHinta
 }

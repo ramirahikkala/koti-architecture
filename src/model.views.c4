@@ -1,45 +1,50 @@
 views {
 
-  view logicalOverview {
-    title 'Looginen malli — kaikki containerit'
+  view index {
+    title 'Level 1 — System Context'
     description '
-      Repo-lähtöinen näkymä: mitä kukin palvelu tekee. Fyysisestä sijainnista
-      (VM vs. koti vs. pilvi) kertoo deployment.c4:n "index"-näkymä.
+      Yksi systeemi ("koti"), sen käyttäjät ja aidosti ulkopuoliset järjestelmät.
+      Ei sisällä sisäisiä palveluja, MQTT:tä, VM:ää tai laitteita — ne ovat
+      Level 2:lla (containers-näkymä) ja Level 4:llä (deployment.c4).
     '
-    include *
-  }
-
-  view kotiWilmaContainer of kotiWilma {
-    title 'koti-wilma'
     include
-      *,
+      koti,
+      rami,
+      perhe,
       wilma,
       anthropic,
-      infra.mqtt
-  }
-
-  view kotiContainer of koti {
-    title 'koti (heating)'
-    include
-      *,
       spotHinta,
-      infra.mqtt
+      telegram
   }
 
-  view kotiDevicesContainer of kotiDevices {
-    title 'koti-devices'
+  view containers of koti {
+    title 'Level 2 — Container: koti'
+    description 'koti-systeemin sisältä auki purettuna: mistä toimivista osista se koostuu.'
     include
       *,
-      infra.mqtt
+      rami,
+      perhe,
+      wilma,
+      anthropic,
+      spotHinta,
+      telegram
   }
 
-  view infraContainer of infra {
-    title 'infra — alusta'
+  view heatingComponents of koti.heating {
+    title 'Level 3 — Component: Lämmityksen ohjain'
     include
       *,
-      koti.*,
-      kotiWilma.*,
-      kotiDevices.*
+      koti.mqtt,
+      spotHinta
+  }
+
+  view wilmaComponents of koti.wilmaService {
+    title 'Level 3 — Component: Wilma-muistutuspalvelu'
+    include
+      *,
+      koti.mqtt,
+      wilma,
+      anthropic
   }
 
 }
