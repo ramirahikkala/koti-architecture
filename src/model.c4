@@ -1,0 +1,72 @@
+specification {
+  element actor
+  element system
+  element container
+  element external
+}
+
+model {
+  rami = actor 'Rami' 'Ylläpitää koko settiä'
+
+  wilma = external 'Wilma' 'Koulun asiointijärjestelmä'
+  anthropic = external 'Anthropic Claude API' 'LLM-poiminta'
+  spotHinta = external 'Spot-Hinta API' 'Sähkön pörssihinta'
+  telegram = external 'Telegram Bot API' 'Suunniteltu ilmoituskanava'
+  phone = external 'Puhelin / push' 'Kanava avoinna'
+
+  koti = system 'koti' 'Headless-palvelut, MQTT substraattina' {
+    heating = container 'koti.heating' 'Hintaohjattu lämmitys' {
+      technology 'Python, paho-mqtt'
+    }
+  }
+
+  kotiWilma = system 'koti-wilma' 'Wilma-muistutuspalvelu' {
+    poller = container 'Poller + LLM-poiminta' {
+      technology 'Python, wilhelmina, Anthropic SDK'
+    }
+    reminderEngine = container 'Reminder engine' {
+      technology 'Python, APScheduler'
+    }
+    db = container 'SQLite' 'wilma.db'
+  }
+
+  kotiDevices = system 'koti-devices' 'ESP32-laiteohjelmistot' {
+    gateway = container 'BLE→MQTT-yhdyskäytävät' {
+      technology 'ESPHome'
+    }
+    desk = container 'Desk display' {
+      technology 'T-Display-S3'
+    }
+    shelly = container 'Shelly-releet/TRV:t' {
+      technology 'Natiivi MQTT'
+    }
+  }
+
+  infra = system 'infra' 'Alusta' {
+    mqtt = container 'MQTT-broker' {
+      technology 'Mosquitto'
+    }
+    ha = container 'Home Assistant'
+    caddy = container 'Caddy' 'Reverse proxy / TLS'
+  }
+
+  wilma -> kotiWilma.poller 'evästesessio, viestit + kokeet'
+  kotiWilma.poller -> anthropic 'poiminta'
+  kotiWilma.poller -> kotiWilma.db
+  kotiWilma.reminderEngine -> kotiWilma.db
+  kotiWilma.reminderEngine -> infra.mqtt 'event-entiteetit + retained today-topic'
+
+  spotHinta -> koti.heating
+  koti.heating -> infra.mqtt 'HA discovery + ohjaus'
+  infra.mqtt -> kotiDevices.shelly
+  kotiDevices.gateway -> infra.mqtt
+  kotiDevices.desk -> infra.mqtt 'lukee retained-topicit suoraan'
+  infra.mqtt -> infra.ha
+
+  infra.ha -> telegram 'automaatio (myöh.)'
+  infra.ha -> phone 'automaatio (myöh.)'
+  telegram -> phone
+
+  rami -> kotiWilma
+  rami -> koti
+}

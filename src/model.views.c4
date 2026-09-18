@@ -1,0 +1,41 @@
+views {
+
+  view index {
+    title 'koti — järjestelmäkartta'
+    include *
+  }
+
+  view kotiWilmaContainer of kotiWilma {
+    title 'koti-wilma'
+    include
+      *,
+      wilma,
+      anthropic,
+      infra.mqtt
+  }
+
+  view kotiContainer of koti {
+    title 'koti (heating)'
+    include
+      *,
+      spotHinta,
+      infra.mqtt
+  }
+
+  view kotiDevicesContainer of kotiDevices {
+    title 'koti-devices'
+    include
+      *,
+      infra.mqtt
+  }
+
+  view infraContainer of infra {
+    title 'infra — alusta'
+    include
+      *,
+      koti.*,
+      kotiWilma.*,
+      kotiDevices.*
+  }
+
+}

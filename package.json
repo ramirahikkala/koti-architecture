@@ -1,0 +1,12 @@
+{
+  "name": "koti-architecture",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "likec4 start",
+    "build": "likec4 build --base /koti-architecture/ --output dist"
+  },
+  "devDependencies": {
+    "likec4": "latest"
+  }
+}
