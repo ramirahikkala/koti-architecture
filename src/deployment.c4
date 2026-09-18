@@ -1,0 +1,67 @@
+specification {
+  deploymentNode koti {
+    title 'Koti'
+  }
+  deploymentNode vm {
+    title 'VM'
+  }
+}
+
+deployment {
+  home = deploymentNode koti {
+    title 'Koti (kotiverkko)'
+    description 'Fyysiset laitteet kotiverkossa'
+
+    gateway = instanceOf kotiDevices.gateway
+    shelly = instanceOf kotiDevices.shelly
+    desk = instanceOf kotiDevices.desk
+  }
+
+  server = deploymentNode vm {
+    title 'VM (Hetzner)'
+    technology 'Docker Compose'
+
+    ha = instanceOf infra.ha
+    mqtt = instanceOf infra.mqtt
+    caddy = instanceOf infra.caddy
+    heating = instanceOf koti.heating
+    wilmaPoller = instanceOf kotiWilma.poller
+    wilmaReminder = instanceOf kotiWilma.reminderEngine
+    wilmaDb = instanceOf kotiWilma.db
+  }
+}
+
+views {
+
+  deployment view index {
+    title 'koti — ylätason kuva'
+    description '
+      Fyysinen/deploy-taso: koti, VM, ulkoiset palvelut, käyttäjä.
+      Klikkaa Kotia tai VM:ää porautuaksesi tarkemmalle tasolle;
+      yksittäiset palvelut vievät niiden omaan container-näkymään
+      (ks. model.views.c4).
+    '
+    include
+      home,
+      home.*,
+      server,
+      server.*,
+      wilma,
+      anthropic,
+      spotHinta,
+      telegram,
+      phone,
+      rami
+  }
+
+  deployment view homeDetail of home {
+    title 'Koti — laitteet'
+    include *
+  }
+
+  deployment view serverDetail of server {
+    title 'VM — palvelut'
+    include *
+  }
+
+}

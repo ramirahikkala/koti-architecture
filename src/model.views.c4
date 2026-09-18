@@ -1,7 +1,11 @@
 views {
 
-  view index {
-    title 'koti — järjestelmäkartta'
+  view logicalOverview {
+    title 'Looginen malli — kaikki containerit'
+    description '
+      Repo-lähtöinen näkymä: mitä kukin palvelu tekee. Fyysisestä sijainnista
+      (VM vs. koti vs. pilvi) kertoo deployment.c4:n "index"-näkymä.
+    '
     include *
   }
 
