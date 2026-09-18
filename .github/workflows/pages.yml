@@ -18,7 +18,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npx likec4@latest build --base /koti-architecture/ --output dist
+
+      - name: Build interactive app (served from /app/)
+        run: npx likec4@latest build --base /koti-architecture/app/ --output dist/app
+
+      - name: Install Playwright browser (for PNG export)
+        run: npx playwright install --with-deps chromium
+
+      - name: Export Level 1 diagram as PNG (light + dark)
+        run: |
+          npx likec4@latest export png --filter index --flat --theme light -o /tmp/ctx-light
+          npx likec4@latest export png --filter index --flat --theme dark -o /tmp/ctx-dark
+          mkdir -p dist/assets
+          cp "$(find /tmp/ctx-light -name '*.png' | head -1)" dist/assets/context-light.png
+          cp "$(find /tmp/ctx-dark -name '*.png' | head -1)" dist/assets/context-dark.png
+
+      - name: Add static landing page
+        run: cp landing/index.html dist/index.html
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

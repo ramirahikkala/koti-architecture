@@ -5,7 +5,10 @@ C4 model of the whole home-automation platform, described as code with
 by which git repo they live in ([`koti`](https://github.com/ramirahikkala/koti),
 [`koti-wilma`](https://github.com/ramirahikkala/koti-wilma), `koti-devices`, `infra`).
 
-Published site: https://ramirahikkala.github.io/koti-architecture/
+Published site: https://ramirahikkala.github.io/koti-architecture/ — a static landing page
+(`landing/index.html`) with just the Level 1 diagram and a short summary, linking through to
+the full interactive, click-to-drill-down app at
+[`/app/`](https://ramirahikkala.github.io/koti-architecture/app/).
 
 ## The four levels
 
@@ -35,5 +38,7 @@ Opens a live-reloading preview at `http://localhost:5173` — edit `src/model.c4
 
 ## Publishing
 
-Push to `main` — `.github/workflows/pages.yml` builds (`likec4 build`) and deploys to GitHub
-Pages automatically. Repo Settings → Pages → Source must be set to "GitHub Actions" once.
+Push to `main` — `.github/workflows/pages.yml` builds the interactive app into `dist/app/`,
+exports the Level 1 diagram as PNG (light + dark) into `dist/assets/`, copies
+`landing/index.html` to `dist/index.html`, and deploys `dist/` to GitHub Pages. Repo Settings →
+Pages → Source must be set to "GitHub Actions" once.
