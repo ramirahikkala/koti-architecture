@@ -6,7 +6,7 @@
     "dev": "likec4 start",
     "build:app": "likec4 build --base /koti-architecture/app/ --output dist/app",
     "build:diagrams": "likec4 export png --filter index --flat --theme light -o /tmp/ctx-light && likec4 export png --filter index --flat --theme dark -o /tmp/ctx-dark && mkdir -p dist/assets && cp \"$(find /tmp/ctx-light -name '*.png' | head -1)\" dist/assets/context-light.png && cp \"$(find /tmp/ctx-dark -name '*.png' | head -1)\" dist/assets/context-dark.png",
-    "build": "npm run build:app && npm run build:diagrams && cp landing/index.html dist/index.html"
+    "build": "npm run build:app && npm run build:diagrams && cp landing/index.html dist/index.html && cp dist/app/404.html dist/404.html"
   },
   "devDependencies": {
     "likec4": "latest"

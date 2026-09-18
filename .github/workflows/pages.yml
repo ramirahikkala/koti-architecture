@@ -45,6 +45,14 @@ jobs:
       - name: Add static landing page
         run: cp landing/index.html dist/index.html
 
+      - name: Promote app's 404.html to site root (SPA deep-link fallback)
+        # `likec4 build` writes its own 404.html next to dist/app/index.html for
+        # GitHub Pages' SPA fallback trick, but GH Pages only honors a 404.html
+        # at the site root — not one nested under /app/. Without this, deep
+        # links like /app/view/deployment/ 404 for real instead of loading the
+        # app and letting its client-side router take over.
+        run: cp dist/app/404.html dist/404.html
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
