@@ -1,14 +1,10 @@
 specification {
-  deploymentNode koti {
-    title 'Koti'
-  }
-  deploymentNode vm {
-    title 'VM'
-  }
+  deploymentNode koti
+  deploymentNode hetznerVm
 }
 
 deployment {
-  home = deploymentNode koti {
+  home = koti {
     title 'Koti (kotiverkko)'
     description 'Fyysiset laitteet kotiverkossa'
 
@@ -17,7 +13,7 @@ deployment {
     desk = instanceOf koti.desk
   }
 
-  server = deploymentNode vm {
+  server = hetznerVm {
     title 'VM (Hetzner)'
     technology 'Docker Compose'
 
@@ -37,11 +33,7 @@ views {
       Code-taso (luokka-/moduulikaavio) jätetty tarkoituksella pois — se
       vanhenisi heti eikä toisi arvoa tälle projektille.
     '
-    include
-      home, home.*,
-      server, server.*,
-      wilma, anthropic, spotHinta, telegram,
-      rami, perhe
+    include *
   }
 
 }
